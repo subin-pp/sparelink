@@ -1,6 +1,6 @@
 import pymysql
-pymysql.version_info = (2, 2, 1, "final", 0)
 pymysql.install_as_MySQLdb()
+
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -16,21 +16,18 @@ SECRET_KEY = 'django-insecure--4i5^hr=arvro!t(m*(_yz_&ohsk7%yw(f40abj$l^nd8$!uye
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]  # required later for deployment
-
-# =========================
-# MYSQL DRIVER FIX (IMPORTANT)
-# =========================
-
+ALLOWED_HOSTS = ["*"]
 
 # =========================
 # DATABASE (RAILWAY)
 # =========================
 
-# TEMP for local testing (REMOVE when deploying)
-os.environ["MYSQL_PUBLIC_URL"] = "mysql://root:cCwzxyuJqOUIbUeYWXeSFMppoQyZvaRt@monorail.proxy.rlwy.net:46982/railway"
+DATABASE_URL = os.getenv("MYSQL_PUBLIC_URL") or os.getenv("MYSQL_URL")
 
-url = urlparse(os.getenv("MYSQL_PUBLIC_URL"))
+if not DATABASE_URL:
+    raise Exception("Database URL not found in environment variables")
+
+url = urlparse(DATABASE_URL)
 
 DATABASES = {
     'default': {
@@ -41,7 +38,7 @@ DATABASES = {
         'HOST': url.hostname,
         'PORT': url.port,
         'OPTIONS': {
-            'ssl': {'ssl-mode': 'REQUIRED'}
+            'ssl': {}
         }
     }
 }
@@ -76,9 +73,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -133,7 +130,6 @@ USE_TZ = True
 # =========================
 
 STATIC_URL = '/static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -163,12 +159,10 @@ REST_FRAMEWORK = {
 }
 
 # =========================
-# CORS
+# CORS (IMPORTANT FOR FRONTEND)
 # =========================
 
-CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8001",
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 # =========================
 # JWT
